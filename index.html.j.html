@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>لوحة العقارات المشتركة</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f6f5f1;--fg:#1d2320;--card:#fff;--muted:#68706b;--accent:#1f6b4f;--accent-fg:#fff;--border:#dcdad2;--warn:#fbeee0;--warnfg:#8a4b0f;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#151a17;--fg:#ecefec;--card:#202722;--muted:#9aa49d;--accent:#4cb98d;--accent-fg:#0d1511;--border:#323b35;--warn:#3a2a17;--warnfg:#f0c28a}}
+:root[data-theme="dark"]{--bg:#151a17;--fg:#ecefec;--card:#202722;--muted:#9aa49d;--accent:#4cb98d;--accent-fg:#0d1511;--border:#323b35;--warn:#3a2a17;--warnfg:#f0c28a}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.6 Tajawal,system-ui,"Segoe UI",Tahoma,sans-serif}
+main{max-width:760px;margin:0 auto;padding:16px}
+h1{font-size:21px;margin:0 0 2px}
+.sub{color:var(--muted);margin:0 0 14px;font-size:13px}
+.bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+select,input,button,textarea{font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 10px}
+.bar>*{flex:1;min-width:130px}
+button{cursor:pointer}
+button.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent);font-weight:700}
+.as{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.as label{font-weight:700;font-size:13px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px;cursor:pointer}
+.card h3{margin:0 0 4px;font-size:15px}
+.row{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;color:var(--muted);font-size:13px}
+.tag{display:inline-block;padding:1px 8px;border-radius:99px;font-size:12px;border:1px solid var(--border);color:var(--muted)}
+.tag.mine{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.price{font-weight:700;color:var(--fg)}
+.detail{background:var(--card);border:1px solid var(--accent);border-radius:12px;padding:14px;margin-bottom:12px}
+.detail dl{display:grid;grid-template-columns:110px 1fr;gap:6px 10px;margin:10px 0}
+.detail dt{color:var(--muted)}
+.detail dd{margin:0}
+.locked{background:var(--warn);color:var(--warnfg);padding:8px 10px;border-radius:8px;font-size:13px}
+form{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+form .full{grid-column:1/-1}
+.ltr{direction:ltr;text-align:right}
+details{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 12px;margin-bottom:12px}
+summary{cursor:pointer;font-weight:700}
+.empty{text-align:center;color:var(--muted);padding:24px}
+</style>
+</head>
+<body>
+<main>
+  <h1>لوحة العقارات المشتركة</h1>
+  <p class="sub">كل المكاتب ترى كل العقارات، لكن بيانات المالك تظهر فقط للمكتب الذي أدخل العقار.</p>
+
+  <div class="as">
+    <label for="office">أتصفح كمكتب:</label>
+    <select id="office" style="flex:1"></select>
+  </div>
+
+  <div class="bar">
+    <input id="q" placeholder="ابحث عن موقع…">
+    <select id="zone"><option value="">كل التنظيمات</option></select>
+  </div>
+
+  <div id="detail"></div>
+
+  <details>
+    <summary>+ إضافة عقار (باسم المكتب الحالي)</summary>
+    <form id="add">
+      <input class="full" name="location" placeholder="الموقع" required>
+      <input class="ltr" name="lat" type="number" step="any" placeholder="خط العرض" value="31.95" required>
+      <input class="ltr" name="lng" type="number" step="any" placeholder="خط الطول" value="35.91" required>
+      <select id="zsel" name="zoning" required></select>
+      <input name="area_sqm" type="number" step="any" placeholder="المساحة (م²)" required>
+      <input name="price_per_sqm" type="number" step="any" placeholder="سعر المتر">
+      <input name="total_price" type="number" step="any" placeholder="السعر الإجمالي (يُحسب تلقائياً)">
+      <input name="owner_name" placeholder="اسم المالك (خاص)" required>
+      <input class="ltr" name="owner_phone" placeholder="هاتف المالك (خاص)" required>
+      <textarea class="full" name="notes" rows="2" placeholder="ملاحظات"></textarea>
+      <button class="primary full" type="submit">حفظ العقار</button>
+    </form>
+  </details>
+
+  <div id="list"></div>
+</main>
+
+<script>
+const OFFICES={1:"مؤسسة مشهور العقارية",2:"الأردنية الأولى العقارية",3:"برهوم العقارية"};
+let current=1, selected=null, nextId=5;
+// بديل لـ fake_db / الـ API. لاحقاً استبدل الدوال بـ fetch() نحو FastAPI.
+const db=[
+{id:1,company_id:1,location:"محافظة العاصمة - قرية المقابلين",lat:31.9,lng:35.9,zoning:"سكني",area_sqm:500,price_per_sqm:150,notes:"أرض مستوية ومطلة على شارعين",owner_name:"أحمد علي",owner_phone:"0790000000"},
+{id:2,company_id:2,location:"عمان - ناعور",lat:31.87,lng:35.83,zoning:"زراعي",area_sqm:2400,price_per_sqm:60,notes:"مسيّجة وفيها بئر ماء",owner_name:"خالد محمد",owner_phone:"0781111111"},
+{id:3,company_id:3,location:"عمان - عبدون",lat:31.95,lng:35.88,zoning:"سكني",area_sqm:900,price_per_sqm:900,notes:"قطعة زاوية مع إطلالة",owner_name:"سامر حداد",owner_phone:"0772222222"},
+{id:4,company_id:1,location:"الزرقاء - المنطقة الصناعية",lat:32.07,lng:36.1,zoning:"صناعي",area_sqm:3000,price_per_sqm:110,notes:"قريبة من الطريق السريع",owner_name:"عمر طه",owner_phone:"0793333333"}
+];
+
+// نفس قاعدة الباك إند: إخفاء بيانات المالك إلا عن المكتب المالك للعقار
+function getProperty(id,officeId){
+  const p=db.find(x=>x.id===id); if(!p) return null;
+  if(p.company_id===officeId) return {...p};
+  const {owner_name,owner_phone,...pub}=p; return pub;
+}
+const total=p=>p.total_price??(p.price_per_sqm?p.price_per_sqm*p.area_sqm:null);
+const fmt=n=>n==null?"–":Math.round(n).toLocaleString("en-US")+" د.أ";
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const $=id=>document.getElementById(id);
+$("office").innerHTML=Object.entries(OFFICES).map(([k,v])=>`<option value="${k}">${v}</option>`).join("");
+const zones=[...new Set(["سكني","تجاري","سكن أخضر","سكن خاص","زراعي","صناعي",...db.map(p=>p.zoning)])];
+$("zsel").innerHTML=zones.map(z=>`<option>${esc(z)}</option>`).join("");
+$("zone").innerHTML+=zones.map(z=>`<option>${esc(z)}</option>`).join("");
+
+function render(){
+  const q=$("q").value.toLowerCase(), z=$("zone").value;
+  const rows=db.filter(p=>(!q||p.location.toLowerCase().includes(q))&&(!z||p.zoning===z));
+  $("list").innerHTML=rows.length?rows.map(p=>{
+    const mine=p.company_id===current;
+    return `<div class="card" data-id="${p.id}">
+      <h3>${esc(p.location)} ${mine?'<span class="tag mine">عقارك</span>':''}</h3>
+      <div class="row"><span>${esc(p.zoning)} · ${p.area_sqm.toLocaleString("en-US")} م²</span><span class="price">${fmt(total(p))}</span></div>
+    </div>`}).join(""):'<div class="empty">لا توجد عقارات مطابقة.</div>';
+  renderDetail();
+}
+function renderDetail(){
+  if(selected==null){$("detail").innerHTML="";return}
+  const p=getProperty(selected,current); if(!p){$("detail").innerHTML="";return}
+  const mine=p.company_id===current;
+  $("detail").innerHTML=`<div class="detail">
+    <div class="row"><strong style="color:var(--fg)">${esc(p.location)}</strong><span class="tag">أدخله: ${esc(OFFICES[p.company_id])}</span></div>
+    <dl>
+      <dt>التنظيم</dt><dd>${esc(p.zoning)}</dd>
+      <dt>المساحة</dt><dd>${p.area_sqm.toLocaleString("en-US")} م²</dd>
+      <dt>سعر المتر</dt><dd>${fmt(p.price_per_sqm)}</dd>
+      <dt>الإجمالي</dt><dd><strong>${fmt(total(p))}</strong></dd>
+      <dt>الإحداثيات</dt><dd><span class="ltr">${p.lat}, ${p.lng}</span> · <a href="https://www.openstreetmap.org/?mlat=${p.lat}&mlon=${p.lng}#map=16/${p.lat}/${p.lng}" target="_blank" rel="noopener">عرض على الخريطة</a></dd>
+      <dt>ملاحظات</dt><dd>${esc(p.notes)||"–"}</dd>
+      ${mine?`<dt>المالك</dt><dd>${esc(p.owner_name)}</dd><dt>هاتف المالك</dt><dd class="ltr" style="display:inline-block">${esc(p.owner_phone)}</dd>`:""}
+    </dl>
+    ${mine?"":`<div class="locked">🔒 بيانات المالك خاصة بمكتب ${esc(OFFICES[p.company_id])}.</div>`}
+    <button onclick="selected=null;renderDetail()" style="margin-top:10px">إغلاق</button>
+  </div>`;
+}
+$("office").onchange=e=>{current=+e.target.value;render()};
+$("q").oninput=render; $("zone").onchange=render;
+$("list").onclick=e=>{const c=e.target.closest(".card"); if(c){selected=+c.dataset.id;renderDetail();window.scrollTo({top:0,behavior:"smooth"})}};
+$("add").onsubmit=e=>{
+  e.preventDefault();
+  const f=Object.fromEntries(new FormData(e.target));
+  ["lat","lng","area_sqm"].forEach(k=>f[k]=+f[k]);
+  ["price_per_sqm","total_price"].forEach(k=>f[k]=f[k]===""?null:+f[k]);
+  if(!zones.includes(f.zoning)){zones.push(f.zoning);$("zone").innerHTML+=`<option>${esc(f.zoning)}</option>`}
+  db.unshift({id:nextId++,company_id:current,...f});
+  e.target.reset(); e.target.lat.value=31.95; e.target.lng.value=35.91;
+  render();
+};
+render();
+</script>
+</body>
+</html>
